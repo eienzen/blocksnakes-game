@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://raw.githubusercontent.com; connect-src 'self' https://data-seed-prebsc-1-s1.bnbchain.org:8545/ wss://data-seed-prebsc-1-s1.bnbchain.org:8545/ https://data-seed-prebsc-2-s1.bnbchain.org:8545/ wss://data-seed-prebsc-2-s1.bnbchain.org:8545/ https://*.bnbchain.org wss://*.bnbchain.org; media-src 'self' https://github.com https://raw.githubusercontent.com;">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>BlockSnakes Game</title>
+    <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/eienzen/blocksnakes/main/favicon.ico">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0a0a23, #1a1a3d);
+            color: #fff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        #header {
+            width: 100%;
+            background: linear-gradient(90deg, #2a2a5d, #00ffcc);
+            padding: 20px;
+            text-align: center;
+            z-index: 1000;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        #header-banner {
+            width: 100%;
+            max-height: 150px;
+            object-fit: cover;
+            margin-bottom: 10px;
+        }
+        #header h1 {
+            margin: 0;
+            font-size: 36px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        #header p {
+            margin: 5px;
+            font-size: 18px;
+        }
+        #content {
+            margin-top: 20px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        canvas {
+            border: 2px solid #00ffcc;
+            background: linear-gradient(45deg, #0a0a23, #1a1a3d);
+            border-radius: 5px;
+            margin: 20px 0;
+            max-width: 90vw;
+            max-height: 70vh;
+        }
+        #gameInfo, #playerHistory, #stakingSection {
+            margin-top: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, #2a2a5d, #3a3a7d);
+            border-radius: 10px;
+            width: 80%;
+            max-width: 600px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        #withdrawalStatus {
+            color: #ff5555;
+            margin-top: 5px;
+            font-size: 14px;
+        }
+        #loadingIndicator {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+            z-index: 2000;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background-color: #00ffcc;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #00ccaa;
+        }
+        button:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+        input, select {
+            padding: 8px;
+            margin: 5px;
+            border-radius: 5px;
+            border: 1px solid #00ffcc;
+            background-color: #1a1a3d;
+            color: #fff;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin: 5px 0;
+            background-color: #3a3a7d;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        h2, h3 {
+            color: #00ffcc;
+        }
+        #gameOverPopup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #2a2a5d, #3a3a7d);
+            padding: 20px;
+            border: 2px solid #00ffcc;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            z-index: 2000;
+            text-align: center;
+            max-width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        #gameOverPopup h2 {
+            margin: 0 0 10px;
+            color: #00ffcc;
+        }
+        #gameOverPopup p {
+            margin: 5px 0;
+        }
+        #closePopup {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+        @media (orientation: portrait) {
+            canvas { max-height: 60vh; }
+            #header { padding: 10px; }
+            #header h1 { font-size: 28px; }
+        }
+        @media (orientation: landscape) {
+            canvas { max-width: 80vw; }
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <img src="https://raw.githubusercontent.com/eienzen/blocksnakes/main/banner.jpg" alt="Banner" id="header-banner">
+        <div>
+            <h1>BlockSnakes: Play and Earn BST Token</h1>
+            <p id="walletAddress"></p>
+            <p id="walletBalance">Wallet Balance: 0.00 BST</p>
+        </div>
+    </div>
+    <div id="content">
+        <div id="gameInfo">
+            <h2>Game Info</h2>
+            <p id="boxesEaten">Boxes Eaten: 0</p>
+            <p>Pending Rewards: <span id="pendingRewards">0.00 BST</span></p>
+            <button id="playGame">Play Game</button>
+            <button id="connectWallet">Connect Wallet</button>
+            <button id="disconnectWallet" style="display: none;">Disconnect Wallet</button>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+        <div id="playerHistory">
+            <h2>Player History</h2>
+            <p>Games Played: <span id="gamesPlayed">0</span></p>
+            <p>Total Game Rewards: <span id="totalGameRewards">0.00 BST</span></p>
+            <p>Total Referrals: <span id="totalReferrals">0</span></p>
+            <p>Referral Rewards: <span id="referralRewards">0.00 BST</span></p>
+            <p>Pending Rewards: <span id="pendingRewardsText">0.00 BST</span></p>
+            <button id="claimGameRewards">Claim Rewards</button>
+            <button id="welcomeBonusButton">Claim Welcome Bonus</button>
+            <button id="getReferralLink">Get Referral Link</button>
+            <p id="withdrawalStatus"></p>
+            <h3>Reward History</h3>
+            <ul id="rewardHistoryList"></ul>
+        </div>
+        <div id="stakingSection">
+            <h2>Staking</h2>
+            <p>Flexible Stake Balance: <span id="flexibleStakeBalance">0.00 BST</span></p>
+            <p>Locked Stake Balance (3M): <span id="lockedStakeBalance3M">0.00 BST</span></p>
+            <p>Locked Stake Balance (6M): <span id="lockedStakeBalance6M">0.00 BST</span></p>
+            <p>Locked Stake Balance (12M): <span id="lockedStakeBalance12M">0.00 BST</span></p>
+            <h3>Stake Tokens</h3>
+            <input type="number" id="stakeAmount" placeholder="Amount to stake" min="0" step="0.01">
+            <select id="lockPeriod">
+                <option value="0">Flexible</option>
+                <option value="1">3 Months</option>
+                <option value="2">6 Months</option>
+                <option value="3">12 Months</option>
+            </select>
+            <button id="stakeTokens">Stake Tokens</button>
+            <h3>Unstake Tokens</h3>
+            <input type="number" id="unstakeAmount" placeholder="Amount to unstake" min="0" step="0.01">
+            <select id="unlockPeriod">
+                <option value="0">Flexible</option>
+                <option value="1">3 Months</option>
+                <option value="2">6 Months</option>
+                <option value="3">12 Months</option>
+            </select>
+            <button id="unstakeTokens">Unstake Tokens</button>
+        </div>
+    </div>
+    <div id="gameOverPopup">
+        <h2>Game Over!</h2>
+        <p>Boxes Eaten: <span id="finalBoxesEaten">0</span></p>
+        <p>Earned BST: <span id="finalRewards">0.00 BST</span></p>
+        <button id="closePopup">X</button>
+    </div>
+    <div id="loadingIndicator">Loading...</div>
+    <audio id="eatingSound" src="https://raw.githubusercontent.com/eienzen/blocksnakes/main/eating-sound-effect-36186.mp3"></audio>
+    <audio id="gameOverSound" src="https://raw.githubusercontent.com/eienzen/blocksnakes/main/game-over-arcade-6435.mp3"></audio>
+    <audio id="victorySound" src="https://raw.githubusercontent.com/eienzen/blocksnakes/main/victory-sound-101319.mp3"></audio>
+    <script src="https://unpkg.com/ethers@6.13.2/dist/ethers.umd.min.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
