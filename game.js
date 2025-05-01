@@ -1552,9 +1552,9 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("finalRewards").textContent = `Earned BST: ${gameRewards.toFixed(2)} BST`;
         popup.style.display = "block";
         isGameRunning = false;
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
         document.getElementById("closePopup").onclick = () => {
             popup.style.display = "none";
-            resetGame().catch(err => console.error("Error resetting game:", err));
         };
     }
 
@@ -1582,10 +1582,6 @@ document.addEventListener("DOMContentLoaded", () => {
         generateBoxes();
         updateCanvasSize();
         draw();
-
-        isGameRunning = true;
-        lastMoveTime = 0;
-        animationFrameId = requestAnimationFrame(gameLoop);
         showLoading(false);
         updatePlayerHistoryUI();
         localStorage.setItem("playerData", JSON.stringify(playerData));
@@ -1618,10 +1614,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function claimPendingRewards() {
-        if (!contract || !account) return alert("Connect wallet first!");
+        if (!account || !contract) return alert("Connect wallet first!");
         try {
             showLoading(true);
-            const provider = new ethers.BrowserProvider(window.ethereum);
+            const provider = new ethers.BrowserProvider(window.ethereum, "any");
+            const signer = await provider.getSigner();
             const balance = await provider.getBalance(account);
             const feeInWei = ethers.parseUnits(WITHDRAWAL_FEE_BNB, "ether");
             if (balance < feeInWei) {
@@ -1651,11 +1648,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function claimWelcomeBonus() {
-        if (!contract || !account) return alert("Connect wallet first!");
+        if (!account || !contract) return alert("Connect wallet first!");
         if (playerData.hasClaimedWelcomeBonus) return alert("Bonus already claimed!");
         try {
             showLoading(true);
-            const provider = new ethers.BrowserProvider(window.ethereum);
+            const provider = new ethers.BrowserProvider(window.ethereum, "any");
+            const signer = await provider.getSigner();
             const balance = await provider.getBalance(account);
             const feeInWei = ethers.parseUnits(WITHDRAWAL_FEE_BNB, "ether");
             if (balance < feeInWei) {
@@ -1680,12 +1678,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function stakeTokens() {
-        if (!contract || !account) return alert("Connect wallet first!");
+        if (!account || !contract) return alert("Connect wallet first!");
         const amount = parseFloat(document.getElementById("stakeAmount").value) || 0;
         const lockPeriod = parseInt(document.getElementById("lockPeriod").value);
         if (amount <= 0) return alert("Enter a valid amount!");
         try {
             showLoading(true);
+            const provider = new ethers.BrowserProvider(window.ethereum, "any");
+            const signer = await provider.getSigner();
             const internalBalance = await contract.getInternalBalance(account);
             const amountInWei = ethers.parseUnits(amount.toString(), 18);
             if (ethers.toBigInt(internalBalance) < amountInWei) {
@@ -1719,12 +1719,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function unstakeTokens() {
-        if (!contract || !account) return alert("Connect wallet first!");
+        if (!account || !contract) return alert("Connect wallet first!");
         const amount = parseFloat(document.getElementById("unstakeAmount").value) || 0;
         const lockPeriod = parseInt(document.getElementById("unlockPeriod").value);
         if (amount <= 0) return alert("Enter a valid amount!");
         try {
             showLoading(true);
+            const provider = new ethers.BrowserProvider(window.ethereum, "any");
+            const signer = await provider.getSigner();
             const tx = await contract.unstakeTokens(ethers.parseUnits(amount.toString(), 18), lockPeriod, { gasLimit: 500000 });
             await tx.wait();
             if (lockPeriod === 0) {
@@ -1748,7 +1750,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!window.ethereum) return alert("Install MetaMask!");
         try {
             showLoading(true);
-            const provider = new ethers.BrowserProvider(window.ethereum, { chainId: 97, name: "bnbt" });
+            const provider = new ethers.BrowserProvider(window.ethereum, "any");
             await provider.send("eth_requestAccounts", []);
             const network = await provider.getNetwork();
             const chainId = network.chainId.toString();
@@ -1778,7 +1780,7 @@ document.addEventListener("DOMContentLoaded", () => {
             account = (await provider.send("eth_requestAccounts", []))[0];
             playerData.walletAddress = account;
 
-            // ENS को बायपास करने के लिए साइनर प्राप्त करें
+            // ENS रिज़ॉल्यूशन को बायपास करने के लिए साइनर प्राप्त करें
             const signer = await provider.getSigner();
             contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
@@ -1878,11 +1880,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     document.getElementById("playGame").addEventListener("click", async () => {
-        if (!account) return alert("Connect wallet!");
-        showLoading(true);
-        enterFullscreen();
-        await resetGame().catch(err => console.error("Error resetting game:", err));
-        showLoading(false);
+        if (!account) return alert("Connect wallet first!");
+        if (!isGameRunning) {
+            showLoading(true);
+            await resetGame().catch(err => console.error("Error resetting game:", err));
+            isGameRunning = true;
+            lastMoveTime = performance.now();
+            animationFrameId = requestAnimationFrame(gameLoop);
+            showLoading(false);
+        }
     });
     document.getElementById("connectWallet").addEventListener("click", connectWallet);
     document.getElementById("disconnectWallet").addEventListener("click", disconnectWallet);
@@ -1928,6 +1934,5 @@ document.addEventListener("DOMContentLoaded", () => {
     updateCanvasSize();
     generateBoxes();
     draw();
-    animationFrameId = requestAnimationFrame(gameLoop);
     updatePlayerHistoryUI();
 });
