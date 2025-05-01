@@ -32,8 +32,8 @@ document.addEventListener("DOMContentLoaded", () => {
         playerData.pendingReferral = referrerAddress;
     }
 
-    const CONTRACT_ADDRESS = "0xA8786e30e162349Df6e09D31aa3F8de1D2bb1745";
-    const GAME_ORACLE_ADDRESS = "0x6C12d2802cCF7072e9ED33b3bdBB0ce4230d5032"; // यहाँ सही गेम ओरेकल एड्रेस डालें
+    const CONTRACT_ADDRESS = "0xDFcAB65bbBe9A9c49fBC18027E8cB66015459934";
+    const GAME_ORACLE_ADDRESS = "0x6C12d2802cCF7072e9ED33b3bdBB0ce4230d5032";
     const CONTRACT_ABI = [
 	{
 		"inputs": [
@@ -718,17 +718,6 @@ document.addEventListener("DOMContentLoaded", () => {
 	{
 		"inputs": [
 			{
-				"internalType": "address",
-				"name": "_gameOracle",
-				"type": "address"
-			}
-		],
-		"stateMutability": "nonpayable",
-		"type": "constructor"
-	},
-	{
-		"inputs": [
-			{
 				"internalType": "uint256",
 				"name": "amount",
 				"type": "uint256"
@@ -905,6 +894,17 @@ document.addEventListener("DOMContentLoaded", () => {
 		"outputs": [],
 		"stateMutability": "payable",
 		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_gameOracle",
+				"type": "address"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
 	},
 	{
 		"inputs": [
@@ -1492,6 +1492,14 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("pendingRewards").textContent = `Pending Rewards: ${(playerData.pendingRewards || 0).toFixed(2)} BST`;
     }
 
+    function playSound(sound) {
+        if (sound && sound.readyState >= 2) {
+            sound.play().catch(err => console.warn("Sound play failed:", err));
+        } else {
+            console.warn("Sound not ready or not found:", sound);
+        }
+    }
+
     function gameLoop(currentTime) {
         if (isGameRunning && ctx) {
             if (currentTime - lastMoveTime >= baseSnakeSpeed) {
@@ -1511,8 +1519,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (direction === "up") head.y--;
         if (direction === "down") head.y++;
 
-        if (head.x < 0 || head.x >= gridWidth || head.y < 0 || head.y >= gridHeight) {
-            gameOverSound.play();
+        if (head.x < 0 || head.x >= gridWidth || head.y < 0 || head.y >= gridHeight || snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+            playSound(gameOverSound);
             showGameOverPopup();
             return;
         }
@@ -1520,7 +1528,7 @@ document.addEventListener("DOMContentLoaded", () => {
         snake.unshift(head);
         const eatenBoxIndex = boxes.findIndex(box => box.x === head.x && box.y === head.y);
         if (eatenBoxIndex !== -1) {
-            eatingSound.play();
+            playSound(eatingSound);
             boxesEaten++;
             const reward = 0.5;
             playerData.pendingRewards = (playerData.pendingRewards || 0) + reward;
@@ -1536,7 +1544,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             boxes.splice(eatenBoxIndex, 1);
             if (boxes.length < 5) generateBoxes();
-            if (boxesEaten % 10 === 0 || boxesEaten % 20 === 0 || boxesEaten % 30 === 0) victorySound.play();
+            if (boxesEaten % 10 === 0 || boxesEaten % 20 === 0 || boxesEaten % 30 === 0) playSound(victorySound);
         } else {
             snake.pop();
         }
@@ -1548,8 +1556,8 @@ document.addEventListener("DOMContentLoaded", () => {
     function showGameOverPopup() {
         const popup = document.getElementById("gameOverPopup");
         if (!popup) return;
-        document.getElementById("finalBoxesEaten").textContent = `Boxes Eaten: ${boxesEaten}`;
-        document.getElementById("finalRewards").textContent = `Earned BST: ${gameRewards.toFixed(2)} BST`;
+        document.getElementById("finalBoxesEaten").textContent = boxesEaten;
+        document.getElementById("finalRewards").textContent = gameRewards.toFixed(2) + " BST";
         popup.style.display = "block";
         isGameRunning = false;
         if (animationFrameId) cancelAnimationFrame(animationFrameId);
@@ -1780,7 +1788,6 @@ document.addEventListener("DOMContentLoaded", () => {
             account = (await provider.send("eth_requestAccounts", []))[0];
             playerData.walletAddress = account;
 
-            // ENS रिज़ॉल्यूशन को बायपास करने के लिए साइनर प्राप्त करें
             const signer = await provider.getSigner();
             contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
@@ -1863,16 +1870,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function updatePlayerHistoryUI() {
-        document.getElementById("gamesPlayed").textContent = `Games Played: ${playerData.gamesPlayed || 0}`;
-        document.getElementById("totalGameRewards").textContent = `Total Game Rewards: ${(playerData.totalRewards || 0).toFixed(2)} BST`;
-        document.getElementById("totalReferrals").textContent = `Total Referrals: ${playerData.totalReferrals || 0}`;
-        document.getElementById("referralRewards").textContent = `Referral Rewards: ${(playerData.referralRewards || 0).toFixed(2)} BST`;
-        document.getElementById("pendingRewardsText").textContent = `Pending Rewards: ${(playerData.pendingRewards || 0).toFixed(2)} BST`;
-        document.getElementById("flexibleStakeBalance").textContent = `Flexible Stake Balance: ${(playerData.flexibleStakeBalance || 0).toFixed(2)} BST`;
-        document.getElementById("lockedStakeBalance3M").textContent = `Locked Stake Balance (3M): ${(playerData.lockedStakeBalances[1] || 0).toFixed(2)} BST`;
-        document.getElementById("lockedStakeBalance6M").textContent = `Locked Stake Balance (6M): ${(playerData.lockedStakeBalances[2] || 0).toFixed(2)} BST`;
-        document.getElementById("lockedStakeBalance12M").textContent = `Locked Stake Balance (12M): ${(playerData.lockedStakeBalances[3] || 0).toFixed(2)} BST`;
-        document.getElementById("walletBalance").textContent = `Wallet Balance: ${(playerData.walletBalance || 0).toFixed(2)} BST`;
+        document.getElementById("gamesPlayed").textContent = playerData.gamesPlayed || 0;
+        document.getElementById("totalGameRewards").textContent = (playerData.totalRewards || 0).toFixed(2) + " BST";
+        document.getElementById("totalReferrals").textContent = playerData.totalReferrals || 0;
+        document.getElementById("referralRewards").textContent = (playerData.referralRewards || 0).toFixed(2) + " BST";
+        document.getElementById("pendingRewardsText").textContent = (playerData.pendingRewards || 0).toFixed(2) + " BST";
+        document.getElementById("flexibleStakeBalance").textContent = (playerData.flexibleStakeBalance || 0).toFixed(2) + " BST";
+        document.getElementById("lockedStakeBalance3M").textContent = (playerData.lockedStakeBalances[1] || 0).toFixed(2) + " BST";
+        document.getElementById("lockedStakeBalance6M").textContent = (playerData.lockedStakeBalances[2] || 0).toFixed(2) + " BST";
+        document.getElementById("lockedStakeBalance12M").textContent = (playerData.lockedStakeBalances[3] || 0).toFixed(2) + " BST";
+        document.getElementById("walletBalance").textContent = (playerData.walletBalance || 0).toFixed(2) + " BST";
         document.getElementById("walletAddress").textContent = account ? `Connected: ${account.slice(0, 6)}...` : "";
         document.getElementById("rewardHistoryList").innerHTML = (playerData.rewardHistory || []).map(entry =>
             `<li>${entry.rewardType}: ${entry.amount.toFixed(2)} BST on ${new Date(entry.timestamp).toLocaleString()}${entry.referee !== "N/A" ? ` (Referee: ${entry.referee.slice(0, 6)}...)` : ""}</li>`
