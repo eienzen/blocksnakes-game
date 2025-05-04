@@ -66,7 +66,7 @@
             max-width: 90vw;
             max-height: 70vh;
         }
-        #gameInfo, #playerHistory, #stakingSection {
+        #gameInfo, #playerHistory, #stakingSection, #transferSection, #boosterSection {
             margin-top: 20px;
             padding: 15px;
             background: linear-gradient(135deg, #2a2a5d, #3a3a7d);
@@ -205,6 +205,8 @@
             <p>Pending Rewards: <span id="pendingRewardsText">0.00 BST</span></p>
             <button id="claimGameRewards">Claim Rewards</button>
             <button id="welcomeBonusButton">Claim Welcome Bonus</button>
+            <button id="claimDailyLoginBonus">Claim Daily Login Bonus</button>
+            <button id="joinCompetition">Join Competition</button>
             <button id="getReferralLink">Get Referral Link</button>
             <p id="withdrawalStatus"></p>
             <h3>Reward History</h3>
@@ -234,6 +236,23 @@
                 <option value="3">12 Months</option>
             </select>
             <button id="unstakeTokens">Unstake Tokens</button>
+        </div>
+        <div id="transferSection">
+            <h2>Transfer Tokens</h2>
+            <h3>Transfer from Wallet</h3>
+            <input type="text" id="transferAddress" placeholder="Recipient Address">
+            <input type="number" id="transferAmount" placeholder="Amount (BST)" min="0" step="0.01">
+            <button id="transferToWallet">Transfer from Wallet</button>
+            <h3>Transfer from Internal Balance</h3>
+            <input type="text" id="transferInternalAddress" placeholder="Recipient Address">
+            <input type="number" id="transferInternalAmount" placeholder="Amount (BST)" min="0" step="0.01">
+            <button id="transferFromInternal">Transfer from Internal</button>
+        </div>
+        <div id="boosterSection">
+            <h2>Purchase Booster</h2>
+            <input type="number" id="boosterDuration" placeholder="Duration (Days)" min="1" max="30">
+            <input type="number" id="boosterMultiplier" placeholder="Multiplier (2-5)" min="2" max="5">
+            <button id="purchaseBooster">Purchase Booster</button>
         </div>
     </div>
     <div id="gameOverPopup">
