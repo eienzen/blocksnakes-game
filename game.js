@@ -28,11 +28,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const urlParams = new URLSearchParams(window.location.search);
     const referrerAddress = urlParams.get("ref");
-    if (referrerAddress && !playerData.pendingReferral && ethers.isAddress(referrerAddress)) {
+    if (referrerAddress && !playerData.pendingReferral && ethers.utils.isAddress(referrerAddress)) {
         playerData.pendingReferral = referrerAddress;
     }
 
-    const CONTRACT_ADDRESS = "0xDFcAB65bbBe9A9c49fBC18027E8cB66015459934";
+    const CONTRACT_ADDRESS = "0x821f83a7Fe0f687f8c02bA26CCCA2FBe373c5B40";
     const GAME_ORACLE_ADDRESS = "0x6C12d2802cCF7072e9ED33b3bdBB0ce4230d5032";
     const CONTRACT_ABI = [
 	{
@@ -174,6 +174,69 @@ document.addEventListener("DOMContentLoaded", () => {
 			{
 				"indexed": true,
 				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "multiplier",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "duration",
+				"type": "uint256"
+			}
+		],
+		"name": "BoosterPurchased",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "DailyLoginBonusClaimed",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "FeeCollected",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
 				"name": "oldOracle",
 				"type": "address"
 			},
@@ -191,19 +254,19 @@ document.addEventListener("DOMContentLoaded", () => {
 		"anonymous": false,
 		"inputs": [
 			{
-				"indexed": false,
-				"internalType": "enum BlockSnakesGame.LockPeriod",
-				"name": "period",
-				"type": "uint8"
+				"indexed": true,
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
 			},
 			{
 				"indexed": false,
 				"internalType": "uint256",
-				"name": "newRate",
+				"name": "boxesEaten",
 				"type": "uint256"
 			}
 		],
-		"name": "LockRewardUpdated",
+		"name": "GamePlayed",
 		"type": "event"
 	},
 	{
@@ -217,6 +280,25 @@ document.addEventListener("DOMContentLoaded", () => {
 			}
 		],
 		"name": "MaxWithdrawalLimitUpdated",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "bytes32",
+				"name": "dataHash",
+				"type": "bytes32"
+			},
+			{
+				"indexed": false,
+				"internalType": "bool",
+				"name": "verified",
+				"type": "bool"
+			}
+		],
+		"name": "OracleDataUpdated",
 		"type": "event"
 	},
 	{
@@ -324,6 +406,25 @@ document.addEventListener("DOMContentLoaded", () => {
 		"anonymous": false,
 		"inputs": [
 			{
+				"indexed": false,
+				"internalType": "address[]",
+				"name": "topUsers",
+				"type": "address[]"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "rewardPerUser",
+				"type": "uint256"
+			}
+		],
+		"name": "RewardsDistributed",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
 				"indexed": true,
 				"internalType": "address",
 				"name": "owner",
@@ -389,7 +490,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			{
 				"indexed": true,
 				"internalType": "address",
-				"name": "player",
+				"name": "user",
 				"type": "address"
 			},
 			{
@@ -400,9 +501,9 @@ document.addEventListener("DOMContentLoaded", () => {
 			},
 			{
 				"indexed": false,
-				"internalType": "enum BlockSnakesGame.LockPeriod",
+				"internalType": "uint256",
 				"name": "lockPeriod",
-				"type": "uint8"
+				"type": "uint256"
 			}
 		],
 		"name": "TokensStaked",
@@ -414,7 +515,32 @@ document.addEventListener("DOMContentLoaded", () => {
 			{
 				"indexed": true,
 				"internalType": "address",
-				"name": "player",
+				"name": "from",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "TokensTransferred",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "user",
 				"type": "address"
 			},
 			{
@@ -425,14 +551,14 @@ document.addEventListener("DOMContentLoaded", () => {
 			},
 			{
 				"indexed": false,
-				"internalType": "enum BlockSnakesGame.LockPeriod",
-				"name": "lockPeriod",
-				"type": "uint8"
+				"internalType": "uint256",
+				"name": "reward",
+				"type": "uint256"
 			},
 			{
 				"indexed": false,
 				"internalType": "uint256",
-				"name": "reward",
+				"name": "lockPeriod",
 				"type": "uint256"
 			}
 		],
@@ -506,19 +632,6 @@ document.addEventListener("DOMContentLoaded", () => {
 			}
 		],
 		"name": "WelcomeBonusClaimed",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "newBonus",
-				"type": "uint256"
-			}
-		],
-		"name": "WelcomeBonusUpdated",
 		"type": "event"
 	},
 	{
@@ -601,9 +714,36 @@ document.addEventListener("DOMContentLoaded", () => {
 	},
 	{
 		"inputs": [],
+		"name": "claimDailyLoginBonus",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "claimWelcomeBonus",
 		"outputs": [],
-		"stateMutability": "payable",
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_secret",
+				"type": "string"
+			}
+		],
+		"name": "distributeCompetitionRewards",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "joinCompetition",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -625,6 +765,52 @@ document.addEventListener("DOMContentLoaded", () => {
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "durationDays",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "multiplier",
+				"type": "uint256"
+			}
+		],
+		"name": "purchaseBooster",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "boxesEaten",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bytes32",
+				"name": "dataHash",
+				"type": "bytes32"
+			},
+			{
+				"internalType": "string",
+				"name": "_secret",
+				"type": "string"
+			}
+		],
+		"name": "recordGame",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "renounceOwnership",
 		"outputs": [],
@@ -639,9 +825,9 @@ document.addEventListener("DOMContentLoaded", () => {
 				"type": "uint256"
 			},
 			{
-				"internalType": "enum BlockSnakesGame.LockPeriod",
+				"internalType": "uint256",
 				"name": "lockPeriod",
-				"type": "uint8"
+				"type": "uint256"
 			}
 		],
 		"name": "stakeTokens",
@@ -706,6 +892,24 @@ document.addEventListener("DOMContentLoaded", () => {
 		"inputs": [
 			{
 				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "transferFromInternalToWallet",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
 				"name": "newOwner",
 				"type": "address"
 			}
@@ -718,14 +922,36 @@ document.addEventListener("DOMContentLoaded", () => {
 	{
 		"inputs": [
 			{
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "transferToWallet",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"stateMutability": "payable",
+		"type": "receive"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "uint256",
 				"name": "amount",
 				"type": "uint256"
 			},
 			{
-				"internalType": "enum BlockSnakesGame.LockPeriod",
+				"internalType": "uint256",
 				"name": "lockPeriod",
-				"type": "uint8"
+				"type": "uint256"
 			}
 		],
 		"name": "unstakeTokens",
@@ -754,29 +980,6 @@ document.addEventListener("DOMContentLoaded", () => {
 	{
 		"inputs": [
 			{
-				"internalType": "enum BlockSnakesGame.LockPeriod",
-				"name": "period",
-				"type": "uint8"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_newRate",
-				"type": "uint256"
-			},
-			{
-				"internalType": "string",
-				"name": "_key",
-				"type": "string"
-			}
-		],
-		"name": "updateLockReward",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
 				"internalType": "uint256",
 				"name": "_newLimit",
 				"type": "uint256"
@@ -788,6 +991,24 @@ document.addEventListener("DOMContentLoaded", () => {
 			}
 		],
 		"name": "updateMaxWithdrawalLimit",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "dataHash",
+				"type": "bytes32"
+			},
+			{
+				"internalType": "string",
+				"name": "_secret",
+				"type": "string"
+			}
+		],
+		"name": "updateOracleData",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -850,24 +1071,6 @@ document.addEventListener("DOMContentLoaded", () => {
 		"inputs": [
 			{
 				"internalType": "uint256",
-				"name": "_newBonus",
-				"type": "uint256"
-			},
-			{
-				"internalType": "string",
-				"name": "_key",
-				"type": "string"
-			}
-		],
-		"name": "updateWelcomeBonus",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
 				"name": "_newFeeInBnbWei",
 				"type": "uint256"
 			},
@@ -883,14 +1086,8 @@ document.addEventListener("DOMContentLoaded", () => {
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			}
-		],
-		"name": "withdrawTokens",
+		"inputs": [],
+		"name": "withdrawAllTokens",
 		"outputs": [],
 		"stateMutability": "payable",
 		"type": "function"
@@ -905,6 +1102,25 @@ document.addEventListener("DOMContentLoaded", () => {
 		],
 		"stateMutability": "nonpayable",
 		"type": "constructor"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "activeUsers",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
 	},
 	{
 		"inputs": [
@@ -950,8 +1166,105 @@ document.addEventListener("DOMContentLoaded", () => {
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "boosters",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "isActive",
+				"type": "bool"
+			},
+			{
+				"internalType": "uint256",
+				"name": "expiry",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "multiplier",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "collectedFees",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "COMPETITION_DURATION",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "competitionData",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "hasJoined",
+				"type": "bool"
+			},
+			{
+				"internalType": "uint256",
+				"name": "gamesPlayed",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "boxesEaten",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "contractBalance",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "DAILY_LOGIN_BONUS",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -970,6 +1283,19 @@ document.addEventListener("DOMContentLoaded", () => {
 				"internalType": "uint8",
 				"name": "",
 				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "FEE_PER_GAME",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -997,54 +1323,6 @@ document.addEventListener("DOMContentLoaded", () => {
 			}
 		],
 		"name": "getInternalBalance",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "player",
-				"type": "address"
-			},
-			{
-				"internalType": "enum BlockSnakesGame.LockPeriod",
-				"name": "lockPeriod",
-				"type": "uint8"
-			}
-		],
-		"name": "getLockedStakeBalance",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "player",
-				"type": "address"
-			},
-			{
-				"internalType": "enum BlockSnakesGame.LockPeriod",
-				"name": "lockPeriod",
-				"type": "uint8"
-			}
-		],
-		"name": "getLockedStakeStartTime",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -1099,12 +1377,38 @@ document.addEventListener("DOMContentLoaded", () => {
 	{
 		"inputs": [
 			{
-				"internalType": "enum BlockSnakesGame.LockPeriod",
+				"internalType": "address",
 				"name": "",
-				"type": "uint8"
+				"type": "address"
 			}
 		],
-		"name": "lockPeriods",
+		"name": "isActiveUser",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "lastDistribution",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "lastOracleUpdate",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -1118,16 +1422,31 @@ document.addEventListener("DOMContentLoaded", () => {
 	{
 		"inputs": [
 			{
-				"internalType": "enum BlockSnakesGame.LockPeriod",
+				"internalType": "address",
 				"name": "",
-				"type": "uint8"
-			}
-		],
-		"name": "lockRewards",
-		"outputs": [
+				"type": "address"
+			},
 			{
 				"internalType": "uint256",
 				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "lockedStakes",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "balance",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "startTime",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "rewardRate",
 				"type": "uint256"
 			}
 		],
@@ -1149,25 +1468,31 @@ document.addEventListener("DOMContentLoaded", () => {
 	},
 	{
 		"inputs": [],
-		"name": "MINIMUM_WITHDRAWAL",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
 		"name": "name",
 		"outputs": [
 			{
 				"internalType": "string",
 				"name": "",
 				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"name": "oracleDataVerified",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
 			}
 		],
 		"stateMutability": "view",
@@ -1211,6 +1536,11 @@ document.addEventListener("DOMContentLoaded", () => {
 		"outputs": [
 			{
 				"internalType": "uint256",
+				"name": "lastLogin",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
 				"name": "gamesPlayed",
 				"type": "uint256"
 			},
@@ -1237,11 +1567,6 @@ document.addEventListener("DOMContentLoaded", () => {
 			{
 				"internalType": "uint256",
 				"name": "internalBalance",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "flexibleStakeBalance",
 				"type": "uint256"
 			}
 		],
@@ -1275,6 +1600,19 @@ document.addEventListener("DOMContentLoaded", () => {
 				"internalType": "address",
 				"name": "",
 				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "REWARD_DISTRIBUTION_PERCENTAGE",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -1321,7 +1659,20 @@ document.addEventListener("DOMContentLoaded", () => {
 	},
 	{
 		"inputs": [],
-		"name": "SECONDS_PER_YEAR",
+		"name": "symbol",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "TIMELOCK_DURATION",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -1334,12 +1685,12 @@ document.addEventListener("DOMContentLoaded", () => {
 	},
 	{
 		"inputs": [],
-		"name": "symbol",
+		"name": "TOP_USER_COUNT",
 		"outputs": [
 			{
-				"internalType": "string",
+				"internalType": "uint256",
 				"name": "",
-				"type": "string"
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -1360,7 +1711,35 @@ document.addEventListener("DOMContentLoaded", () => {
 	},
 	{
 		"inputs": [],
-		"name": "welcomeBonus",
+		"name": "viewUserRecords",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "totalRewards",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "gamesPlayed",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "referralRewards",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "internalBalance",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "WELCOME_BONUS",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -1388,12 +1767,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let gameOracleProvider;
     try {
-        gameOracleProvider = new ethers.JsonRpcProvider("https://data-seed-prebsc-1-s1.bnbchain.org:8545/", { chainId: 97, name: "BNB Testnet" });
+        gameOracleProvider = new ethers.providers.JsonRpcProvider("https://data-seed-prebsc-1-s1.bnbchain.org:8545/", { chainId: 97, name: "BNB Testnet" });
         console.log("Connected to JSON-RPC provider.");
     } catch (error) {
         console.error("Failed to connect to primary provider:", error);
         try {
-            gameOracleProvider = new ethers.JsonRpcProvider("https://data-seed-prebsc-2-s1.bnbchain.org:8545/", { chainId: 97, name: "BNB Testnet" });
+            gameOracleProvider = new ethers.providers.JsonRpcProvider("https://data-seed-prebsc-2-s1.bnbchain.org:8545/", { chainId: 97, name: "BNB Testnet" });
             console.log("Connected to backup JSON-RPC provider.");
         } catch (backupError) {
             console.error("Failed to connect to backup provider:", backupError);
@@ -1561,9 +1940,6 @@ document.addEventListener("DOMContentLoaded", () => {
         popup.style.display = "block";
         isGameRunning = false;
         if (animationFrameId) cancelAnimationFrame(animationFrameId);
-        document.getElementById("closePopup").onclick = () => {
-            popup.style.display = "none";
-        };
     }
 
     async function resetGame() {
@@ -1600,9 +1976,10 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             showLoading(true);
             const tx = await contract.claimAllRewards(
-                ethers.parseUnits(rewardAmount.toString(), 18),
+                ethers.utils.parseUnits(rewardAmount.toString(), 18),
                 account,
-                playerData.pendingReferral || ethers.ZeroAddress
+                playerData.pendingReferral || ethers.constants.AddressZero,
+                { gasLimit: 500000 }
             );
             await tx.wait();
             playerData.totalRewards = (playerData.totalRewards || 0) + rewardAmount;
@@ -1625,23 +2002,22 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!account || !contract) return alert("Connect wallet first!");
         try {
             showLoading(true);
-            const provider = new ethers.BrowserProvider(window.ethereum, "any");
+            const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
             const signer = await provider.getSigner();
             const balance = await provider.getBalance(account);
-            const feeInWei = ethers.parseUnits(WITHDRAWAL_FEE_BNB, "ether");
-            if (balance < feeInWei) {
+            const feeInWei = ethers.utils.parseUnits(WITHDRAWAL_FEE_BNB, "ether");
+            if (balance.lt(feeInWei)) {
                 alert(`Need ${WITHDRAWAL_FEE_BNB} BNB for fee.`);
                 return;
             }
             const internalBalance = await contract.getInternalBalance(account);
-            const pendingRewardsInWei = ethers.parseUnits(playerData.pendingRewards.toString(), 18);
-            if (ethers.toBigInt(internalBalance) < pendingRewardsInWei) {
-                alert("Insufficient internal balance. Submit rewards first.");
+            if (ethers.BigNumber.from(internalBalance).eq(0)) {
+                alert("No internal balance to withdraw!");
                 return;
             }
-            const tx = await contract.withdrawTokens(pendingRewardsInWei, { value: feeInWei, gasLimit: 500000 });
+            const tx = await contract.withdrawAllTokens({ value: feeInWei, gasLimit: 500000 });
             await tx.wait();
-            playerData.walletBalance = Number(ethers.formatUnits(await provider.getBalance(account), 18));
+            playerData.walletBalance = Number(ethers.utils.formatUnits(await provider.getBalance(account), 18));
             playerData.pendingRewards = 0;
             await loadPlayerHistory();
             updatePlayerHistoryUI();
@@ -1660,18 +2036,10 @@ document.addEventListener("DOMContentLoaded", () => {
         if (playerData.hasClaimedWelcomeBonus) return alert("Bonus already claimed!");
         try {
             showLoading(true);
-            const provider = new ethers.BrowserProvider(window.ethereum, "any");
-            const signer = await provider.getSigner();
-            const balance = await provider.getBalance(account);
-            const feeInWei = ethers.parseUnits(WITHDRAWAL_FEE_BNB, "ether");
-            if (balance < feeInWei) {
-                alert(`Need ${WITHDRAWAL_FEE_BNB} BNB for fee.`);
-                return;
-            }
-            const tx = await contract.claimWelcomeBonus({ value: feeInWei, gasLimit: 500000 });
+            const tx = await contract.claimWelcomeBonus({ gasLimit: 500000 });
             await tx.wait();
             playerData.hasClaimedWelcomeBonus = true;
-            const welcomeBonus = Number(ethers.formatUnits(await contract.welcomeBonus(), 18));
+            const welcomeBonus = 100; // WELCOME_BONUS is 100 BST
             playerData.totalRewards = (playerData.totalRewards || 0) + welcomeBonus;
             playerData.pendingRewards = (playerData.pendingRewards || 0) + welcomeBonus;
             await loadPlayerHistory();
@@ -1685,6 +2053,26 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    async function claimDailyLoginBonus() {
+        if (!account || !contract) return alert("Connect wallet first!");
+        try {
+            showLoading(true);
+            const tx = await contract.claimDailyLoginBonus({ gasLimit: 500000 });
+            await tx.wait();
+            const dailyBonus = 50; // DAILY_LOGIN_BONUS is 50 BST
+            playerData.totalRewards = (playerData.totalRewards || 0) + dailyBonus;
+            playerData.pendingRewards = (playerData.pendingRewards || 0) + dailyBonus;
+            await loadPlayerHistory();
+            updatePlayerHistoryUI();
+            alert(`Daily login bonus of ${dailyBonus} BST claimed!`);
+        } catch (error) {
+            console.error("Error claiming daily login bonus:", error);
+            alert("Failed to claim daily login bonus: " + error.message);
+        } finally {
+            showLoading(false);
+        }
+    }
+
     async function stakeTokens() {
         if (!account || !contract) return alert("Connect wallet first!");
         const amount = parseFloat(document.getElementById("stakeAmount").value) || 0;
@@ -1692,16 +2080,16 @@ document.addEventListener("DOMContentLoaded", () => {
         if (amount <= 0) return alert("Enter a valid amount!");
         try {
             showLoading(true);
-            const provider = new ethers.BrowserProvider(window.ethereum, "any");
+            const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
             const signer = await provider.getSigner();
             const internalBalance = await contract.getInternalBalance(account);
-            const amountInWei = ethers.parseUnits(amount.toString(), 18);
-            if (ethers.toBigInt(internalBalance) < amountInWei) {
+            const amountInWei = ethers.utils.parseUnits(amount.toString(), 18);
+            if (ethers.BigNumber.from(internalBalance).lt(amountInWei)) {
                 alert("Insufficient internal balance to stake!");
                 return;
             }
             const contractBal = await contract.contractBalance();
-            if (ethers.toBigInt(contractBal) < amountInWei) {
+            if (ethers.BigNumber.from(contractBal).lt(amountInWei)) {
                 alert("Contract does not have enough BST tokens!");
                 return;
             }
@@ -1733,9 +2121,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (amount <= 0) return alert("Enter a valid amount!");
         try {
             showLoading(true);
-            const provider = new ethers.BrowserProvider(window.ethereum, "any");
+            const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
             const signer = await provider.getSigner();
-            const tx = await contract.unstakeTokens(ethers.parseUnits(amount.toString(), 18), lockPeriod, { gasLimit: 500000 });
+            const tx = await contract.unstakeTokens(ethers.utils.parseUnits(amount.toString(), 18), lockPeriod, { gasLimit: 500000 });
             await tx.wait();
             if (lockPeriod === 0) {
                 playerData.flexibleStakeBalance = (playerData.flexibleStakeBalance || 0) - amount;
@@ -1754,11 +2142,100 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    async function joinCompetition() {
+        if (!account || !contract) return alert("Connect wallet first!");
+        try {
+            showLoading(true);
+            const tx = await contract.joinCompetition({ gasLimit: 500000 });
+            await tx.wait();
+            await loadPlayerHistory();
+            updatePlayerHistoryUI();
+            alert("Joined competition successfully!");
+        } catch (error) {
+            console.error("Error joining competition:", error);
+            alert("Failed to join competition: " + error.message);
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    async function purchaseBooster() {
+        if (!account || !contract) return alert("Connect wallet first!");
+        const durationDays = parseInt(document.getElementById("boosterDuration").value) || 0;
+        const multiplier = parseInt(document.getElementById("boosterMultiplier").value) || 0;
+        if (durationDays <= 0 || multiplier < 2 || multiplier > 5) return alert("Enter valid duration (1-30 days) and multiplier (2-5)!");
+        try {
+            showLoading(true);
+            const tx = await contract.purchaseBooster(durationDays, multiplier, { gasLimit: 500000 });
+            await tx.wait();
+            await loadPlayerHistory();
+            updatePlayerHistoryUI();
+            alert(`Booster purchased: ${multiplier}x for ${durationDays} days!`);
+            document.getElementById("boosterDuration").value = "";
+            document.getElementById("boosterMultiplier").value = "";
+        } catch (error) {
+            console.error("Error purchasing booster:", error);
+            alert("Failed to purchase booster: " + error.message);
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    async function transferToWallet() {
+        if (!account || !contract) return alert("Connect wallet first!");
+        const toAddress = document.getElementById("transferAddress").value;
+        const amount = parseFloat(document.getElementById("transferAmount").value) || 0;
+        if (!ethers.utils.isAddress(toAddress)) return alert("Enter a valid recipient address!");
+        if (amount <= 0) return alert("Enter a valid amount!");
+        try {
+            showLoading(true);
+            const amountInWei = ethers.utils.parseUnits(amount.toString(), 18);
+            const tx = await contract.transferToWallet(toAddress, amountInWei, { gasLimit: 500000 });
+            await tx.wait();
+            playerData.walletBalance = Number(ethers.utils.formatUnits(await contract.balanceOf(account), 18));
+            await loadPlayerHistory();
+            updatePlayerHistoryUI();
+            alert(`${amount} BST transferred to ${toAddress}!`);
+            document.getElementById("transferAddress").value = "";
+            document.getElementById("transferAmount").value = "";
+        } catch (error) {
+            console.error("Error transferring tokens:", error);
+            alert("Failed to transfer tokens: " + error.message);
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    async function transferFromInternalToWallet() {
+        if (!account || !contract) return alert("Connect wallet first!");
+        const toAddress = document.getElementById("transferInternalAddress").value;
+        const amount = parseFloat(document.getElementById("transferInternalAmount").value) || 0;
+        if (!ethers.utils.isAddress(toAddress)) return alert("Enter a valid recipient address!");
+        if (amount <= 0) return alert("Enter a valid amount!");
+        try {
+            showLoading(true);
+            const amountInWei = ethers.utils.parseUnits(amount.toString(), 18);
+            const tx = await contract.transferFromInternalToWallet(toAddress, amountInWei, { gasLimit: 500000 });
+            await tx.wait();
+            playerData.pendingRewards = (playerData.pendingRewards || 0) - amount;
+            await loadPlayerHistory();
+            updatePlayerHistoryUI();
+            alert(`${amount} BST transferred from internal balance to ${toAddress}!`);
+            document.getElementById("transferInternalAddress").value = "";
+            document.getElementById("transferInternalAmount").value = "";
+        } catch (error) {
+            console.error("Error transferring tokens from internal balance:", error);
+            alert("Failed to transfer tokens: " + error.message);
+        } finally {
+            showLoading(false);
+        }
+    }
+
     async function connectWallet() {
         if (!window.ethereum) return alert("Install MetaMask!");
         try {
             showLoading(true);
-            const provider = new ethers.BrowserProvider(window.ethereum, "any");
+            const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
             await provider.send("eth_requestAccounts", []);
             const network = await provider.getNetwork();
             const chainId = network.chainId.toString();
@@ -1791,7 +2268,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const signer = await provider.getSigner();
             contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
-            WITHDRAWAL_FEE_BNB = ethers.formatUnits(await contract.withdrawalFeeInBnb(), "ether");
+            WITHDRAWAL_FEE_BNB = ethers.utils.formatUnits(await contract.withdrawalFeeInBnb(), "ether");
             await loadPlayerHistory();
             updatePlayerHistoryUI();
             document.getElementById("connectWallet").style.display = "none";
@@ -1835,28 +2312,28 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         try {
             showLoading(true);
-            const history = await contract.playerHistory(account);
+            const history = await contract.viewUserRecords({ from: account });
             playerData.gamesPlayed = Number(history.gamesPlayed) || 0;
-            playerData.totalRewards = Number(ethers.formatUnits(history.totalRewards || 0, 18));
+            playerData.totalRewards = Number(ethers.utils.formatUnits(history.totalRewards || 0, 18));
             playerData.totalReferrals = Number(history.totalReferrals) || 0;
-            playerData.referralRewards = Number(ethers.formatUnits(history.referralRewards || 0, 18));
-            playerData.hasClaimedWelcomeBonus = history.hasClaimedWelcomeBonus || false;
-            playerData.pendingRewards = Number(ethers.formatUnits(await contract.getInternalBalance(account), 18));
-            playerData.walletBalance = Number(ethers.formatUnits(await contract.balanceOf(account), 18));
-            playerData.flexibleStakeBalance = Number(ethers.formatUnits(history.flexibleStakeBalance || 0, 18));
+            playerData.referralRewards = Number(ethers.utils.formatUnits(history.referralRewards || 0, 18));
+            playerData.hasClaimedWelcomeBonus = await contract.playerHistory(account).then(h => h.hasClaimedWelcomeBonus) || false;
+            playerData.pendingRewards = Number(ethers.utils.formatUnits(await contract.getInternalBalance(account), 18));
+            playerData.walletBalance = Number(ethers.utils.formatUnits(await contract.balanceOf(account), 18));
+            playerData.flexibleStakeBalance = Number(ethers.utils.formatUnits(await contract.getLockedStakeBalance(account, 0), 18));
 
             playerData.lockedStakeBalances[0] = playerData.flexibleStakeBalance;
             for (let i = 1; i <= 3; i++) {
-                playerData.lockedStakeBalances[i] = Number(ethers.formatUnits(await contract.getLockedStakeBalance(account, i), 18));
+                playerData.lockedStakeBalances[i] = Number(ethers.utils.formatUnits(await contract.getLockedStakeBalance(account, i), 18));
                 playerData.lockedStakeStartTimes[i] = Number(await contract.getLockedStakeStartTime(account, i));
             }
 
             const rewards = await contract.getRewardHistory(account);
             playerData.rewardHistory = rewards.map(reward => ({
-                amount: Number(ethers.formatUnits(reward.amount, 18)),
+                amount: Number(ethers.utils.formatUnits(reward.amount, 18)),
                 timestamp: Number(reward.timestamp) * 1000,
                 rewardType: reward.rewardType,
-                referee: reward.referee === ethers.ZeroAddress ? "N/A" : reward.referee
+                referee: reward.referee === ethers.constants.AddressZero ? "N/A" : reward.referee
             }));
 
             updatePlayerHistoryUI();
@@ -1886,6 +2363,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ).join("");
     }
 
+    // Event Listeners
     document.getElementById("playGame").addEventListener("click", async () => {
         if (!account) return alert("Connect wallet first!");
         if (!isGameRunning) {
@@ -1897,13 +2375,23 @@ document.addEventListener("DOMContentLoaded", () => {
             showLoading(false);
         }
     });
+
     document.getElementById("connectWallet").addEventListener("click", connectWallet);
     document.getElementById("disconnectWallet").addEventListener("click", disconnectWallet);
     document.getElementById("claimGameRewards").addEventListener("click", claimPendingRewards);
     document.getElementById("welcomeBonusButton").addEventListener("click", claimWelcomeBonus);
+    document.getElementById("claimDailyLoginBonus").addEventListener("click", claimDailyLoginBonus);
     document.getElementById("stakeTokens").addEventListener("click", stakeTokens);
     document.getElementById("unstakeTokens").addEventListener("click", unstakeTokens);
+    document.getElementById("joinCompetition").addEventListener("click", joinCompetition);
+    document.getElementById("purchaseBooster").addEventListener("click", purchaseBooster);
+    document.getElementById("transferToWallet").addEventListener("click", transferToWallet);
+    document.getElementById("transferFromInternal").addEventListener("click", transferFromInternalToWallet);
     document.getElementById("getReferralLink").addEventListener("click", getReferralLink);
+
+    document.getElementById("closePopup").addEventListener("click", () => {
+        document.getElementById("gameOverPopup").style.display = "none";
+    });
 
     document.addEventListener("keydown", (event) => {
         if (isGameRunning) {
