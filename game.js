@@ -18,6 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
         pendingReferral: null,
         pendingReferrerReward: 0,
         rewardHistory: [],
+        stakeHistory: [], // Added for staking history
         hasClaimedWelcomeBonus: false,
         walletBalance: 0,
         walletAddress: null,
@@ -1767,12 +1768,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let gameOracleProvider;
     try {
-        gameOracleProvider = new ethers.providers.JsonRpcProvider("https://data-seed-prebsc-1-s1.bnbchain.org:8545/", { chainId: 97, name: "BNB Testnet" });
+        gameOracleProvider = new ethers.providers.JsonRpcProvider("https://data-seed-prebsc-1-s1.bnbchain.org:8545", { chainId: 97, name: "BNB Testnet" });
         console.log("Connected to JSON-RPC provider.");
     } catch (error) {
         console.error("Failed to connect to primary provider:", error);
         try {
-            gameOracleProvider = new ethers.providers.JsonRpcProvider("https://data-seed-prebsc-2-s1.bnbchain.org:8545/", { chainId: 97, name: "BNB Testnet" });
+            gameOracleProvider = new ethers.providers.JsonRpcProvider("https://data-seed-prebsc-2-s1.bnbchain.org:8545", { chainId: 97, name: "BNB Testnet" });
             console.log("Connected to backup JSON-RPC provider.");
         } catch (backupError) {
             console.error("Failed to connect to backup provider:", backupError);
@@ -1798,7 +1799,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const victorySound = document.getElementById("victorySound");
 
     function showLoading(show) {
-        document.getElementById("loadingIndicator").style.display = show ? "block" : "none";
+        const loadingIndicator = document.getElementById("loadingIndicator");
+        if (loadingIndicator) {
+            loadingIndicator.style.display = show ? "block" : "none";
+        }
     }
 
     function updateCanvasSize() {
@@ -1837,11 +1841,13 @@ document.addEventListener("DOMContentLoaded", () => {
         ctx.fillStyle = "#0a0a23";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+        // Draw snake
         snake.forEach((segment, index) => {
             ctx.fillStyle = index === 0 ? "#ffd700" : "#800080";
             ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 2, gridSize - 2);
 
             if (index === 0) {
+                // Draw eyes for the head
                 ctx.beginPath();
                 ctx.arc(segment.x * gridSize + gridSize * 0.25, segment.y * gridSize + gridSize * 0.3, gridSize * 0.1, 0, Math.PI * 2);
                 ctx.fillStyle = "white";
@@ -1862,13 +1868,21 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
+        // Draw boxes
         boxes.forEach(box => {
             ctx.fillStyle = "#ff5555";
             ctx.fillRect(box.x * gridSize, box.y * gridSize, gridSize - 2, gridSize - 2);
         });
 
-        document.getElementById("boxesEaten").textContent = `Boxes Eaten: ${boxesEaten}`;
-        document.getElementById("pendingRewards").textContent = `Pending Rewards: ${(playerData.pendingRewards || 0).toFixed(2)} BST`;
+        // Update UI elements
+        const boxesEatenElement = document.getElementById("boxesEaten");
+        const pendingRewardsElement = document.getElementById("pendingRewards");
+        if (boxesEatenElement) {
+            boxesEatenElement.textContent = `Boxes Eaten: ${boxesEaten}`;
+        }
+        if (pendingRewardsElement) {
+            pendingRewardsElement.textContent = `Pending Rewards: ${(playerData.pendingRewards || 0).toFixed(2)} BST`;
+        }
     }
 
     function playSound(sound) {
@@ -1935,8 +1949,14 @@ document.addEventListener("DOMContentLoaded", () => {
     function showGameOverPopup() {
         const popup = document.getElementById("gameOverPopup");
         if (!popup) return;
-        document.getElementById("finalBoxesEaten").textContent = boxesEaten;
-        document.getElementById("finalRewards").textContent = gameRewards.toFixed(2) + " BST";
+        const finalBoxesEatenElement = document.getElementById("finalBoxesEaten");
+        const finalRewardsElement = document.getElementById("finalRewards");
+        if (finalBoxesEatenElement) {
+            finalBoxesEatenElement.textContent = boxesEaten;
+        }
+        if (finalRewardsElement) {
+            finalRewardsElement.textContent = gameRewards.toFixed(2) + " BST";
+        }
         popup.style.display = "block";
         isGameRunning = false;
         if (animationFrameId) cancelAnimationFrame(animationFrameId);
@@ -1954,14 +1974,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 await loadPlayerHistory();
             } catch (error) {
                 console.error("Error submitting rewards during reset:", error);
-                document.getElementById("withdrawalStatus").textContent = `Error: ${error.message}`;
+                const withdrawalStatusElement = document.getElementById("withdrawalStatus");
+                if (withdrawalStatusElement) {
+                    withdrawalStatusElement.textContent = `Error: ${error.message}`;
+                }
             }
         }
 
         playerData.gamesPlayed = (playerData.gamesPlayed || 0) + 1;
         boxesEaten = 0;
         gameRewards = 0;
-        snake = [{ x: 10, y: 10 }];
+        snake = [{ x: 10, y: 10 }]; // Reset snake to initial position
         direction = "right";
         generateBoxes();
         updateCanvasSize();
@@ -1991,7 +2014,10 @@ document.addEventListener("DOMContentLoaded", () => {
             alert(`${rewardAmount} BST rewards submitted!`);
         } catch (error) {
             console.error("Error submitting rewards:", error);
-            document.getElementById("withdrawalStatus").textContent = `Error: ${error.message}`;
+            const withdrawalStatusElement = document.getElementById("withdrawalStatus");
+            if (withdrawalStatusElement) {
+                withdrawalStatusElement.textContent = `Error: ${error.message}`;
+            }
             alert("Failed to submit rewards: " + error.message);
         } finally {
             showLoading(false);
@@ -2024,7 +2050,10 @@ document.addEventListener("DOMContentLoaded", () => {
             alert("Rewards withdrawn!");
         } catch (error) {
             console.error("Error claiming rewards:", error);
-            document.getElementById("withdrawalStatus").textContent = `Error: ${error.message}`;
+            const withdrawalStatusElement = document.getElementById("withdrawalStatus");
+            if (withdrawalStatusElement) {
+                withdrawalStatusElement.textContent = `Error: ${error.message}`;
+            }
             alert("Failed to claim rewards: " + error.message);
         } finally {
             showLoading(false);
@@ -2102,13 +2131,73 @@ document.addEventListener("DOMContentLoaded", () => {
                 playerData.lockedStakeBalances[lockPeriod] = (playerData.lockedStakeBalances[lockPeriod] || 0) + amount;
                 playerData.lockedStakeStartTimes[lockPeriod] = Date.now() / 1000;
             }
+            // Add to stake history
+            playerData.stakeHistory.push({
+                type: "Stake",
+                amount: amount,
+                lockPeriod: lockPeriod,
+                timestamp: Date.now(),
+                source: "Internal Balance"
+            });
             await loadPlayerHistory();
             updatePlayerHistoryUI();
-            alert(`${amount} BST staked successfully!`);
+            alert(`${amount} BST staked successfully from internal balance!`);
             document.getElementById("stakeAmount").value = "";
         } catch (error) {
             console.error("Error staking tokens:", error);
             alert("Failed to stake: " + error.message);
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    async function stakeTokensFromWallet() {
+        if (!account || !contract) return alert("Connect wallet first!");
+        const amount = parseFloat(document.getElementById("stakeAmount").value) || 0;
+        const lockPeriod = parseInt(document.getElementById("lockPeriod").value);
+        if (amount <= 0) return alert("Enter a valid amount!");
+        try {
+            showLoading(true);
+            const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+            const signer = await provider.getSigner();
+            const walletBalance = await contract.balanceOf(account);
+            const amountInWei = ethers.utils.parseUnits(amount.toString(), 18);
+            if (ethers.BigNumber.from(walletBalance).lt(amountInWei)) {
+                alert("Insufficient wallet balance to stake!");
+                return;
+            }
+            const contractBal = await contract.contractBalance();
+            if (ethers.BigNumber.from(contractBal).lt(amountInWei)) {
+                alert("Contract does not have enough BST tokens!");
+                return;
+            }
+            // First, transfer tokens from wallet to contract
+            await contract.transferToWallet(CONTRACT_ADDRESS, amountInWei, { gasLimit: 500000 });
+            // Then stake the tokens
+            const tx = await contract.stakeTokens(amountInWei, lockPeriod, { gasLimit: 500000 });
+            await tx.wait();
+            playerData.walletBalance = Number(ethers.utils.formatUnits(await contract.balanceOf(account), 18));
+            if (lockPeriod === 0) {
+                playerData.flexibleStakeBalance = (playerData.flexibleStakeBalance || 0) + amount;
+            } else {
+                playerData.lockedStakeBalances[lockPeriod] = (playerData.lockedStakeBalances[lockPeriod] || 0) + amount;
+                playerData.lockedStakeStartTimes[lockPeriod] = Date.now() / 1000;
+            }
+            // Add to stake history
+            playerData.stakeHistory.push({
+                type: "Stake",
+                amount: amount,
+                lockPeriod: lockPeriod,
+                timestamp: Date.now(),
+                source: "Wallet"
+            });
+            await loadPlayerHistory();
+            updatePlayerHistoryUI();
+            alert(`${amount} BST staked successfully from wallet!`);
+            document.getElementById("stakeAmount").value = "";
+        } catch (error) {
+            console.error("Error staking tokens from wallet:", error);
+            alert("Failed to stake from wallet: " + error.message);
         } finally {
             showLoading(false);
         }
@@ -2123,16 +2212,28 @@ document.addEventListener("DOMContentLoaded", () => {
             showLoading(true);
             const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
             const signer = await provider.getSigner();
-            const tx = await contract.unstakeTokens(ethers.utils.parseUnits(amount.toString(), 18), lockPeriod, { gasLimit: 500000 });
+            const amountInWei = ethers.utils.parseUnits(amount.toString(), 18);
+            const tx = await contract.unstakeTokens(amountInWei, lockPeriod, { gasLimit: 500000 });
             await tx.wait();
             if (lockPeriod === 0) {
                 playerData.flexibleStakeBalance = (playerData.flexibleStakeBalance || 0) - amount;
             } else {
                 playerData.lockedStakeBalances[lockPeriod] = (playerData.lockedStakeBalances[lockPeriod] || 0) - amount;
             }
+            // Transfer directly to wallet instead of internal balance
+            await contract.transferFromInternalToWallet(account, amountInWei, { gasLimit: 500000 });
+            playerData.walletBalance = Number(ethers.utils.formatUnits(await contract.balanceOf(account), 18));
+            // Add to stake history
+            playerData.stakeHistory.push({
+                type: "Unstake",
+                amount: amount,
+                lockPeriod: lockPeriod,
+                timestamp: Date.now(),
+                destination: "Wallet"
+            });
             await loadPlayerHistory();
             updatePlayerHistoryUI();
-            alert(`${amount} BST unstaked successfully!`);
+            alert(`${amount} BST unstaked successfully and transferred to wallet!`);
             document.getElementById("unstakeAmount").value = "";
         } catch (error) {
             console.error("Error unstaking tokens:", error);
@@ -2231,6 +2332,40 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    async function showRewardHistory() {
+        if (!account || !contract) return alert("Connect wallet first!");
+        try {
+            showLoading(true);
+            const rewards = await contract.getRewardHistory(account);
+            playerData.rewardHistory = rewards.map(reward => ({
+                amount: Number(ethers.utils.formatUnits(reward.amount, 18)),
+                timestamp: Number(reward.timestamp) * 1000,
+                rewardType: reward.rewardType,
+                referee: reward.referee === ethers.constants.AddressZero ? "N/A" : reward.referee
+            }));
+            updatePlayerHistoryUI();
+            localStorage.setItem("playerData", JSON.stringify(playerData));
+            alert("Reward history refreshed!");
+        } catch (error) {
+            console.error("Error loading reward history:", error);
+            alert("Failed to load reward history: " + error.message);
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    function getReferralLink() {
+        if (!account) return alert("Connect wallet first!");
+        const baseUrl = window.location.origin + window.location.pathname;
+        const referralLink = `${baseUrl}?ref=${account}`;
+        navigator.clipboard.writeText(referralLink).then(() => {
+            alert(`Referral link copied: ${referralLink}`);
+        }).catch(err => {
+            console.error("Failed to copy referral link:", err);
+            alert("Failed to copy referral link. Please copy manually: " + referralLink);
+        });
+    }
+
     async function connectWallet() {
         if (!window.ethereum) return alert("Install MetaMask!");
         try {
@@ -2271,9 +2406,12 @@ document.addEventListener("DOMContentLoaded", () => {
             WITHDRAWAL_FEE_BNB = ethers.utils.formatUnits(await contract.withdrawalFeeInBnb(), "ether");
             await loadPlayerHistory();
             updatePlayerHistoryUI();
-            document.getElementById("connectWallet").style.display = "none";
-            document.getElementById("disconnectWallet").style.display = "block";
-            document.getElementById("walletAddress").textContent = `Connected: ${account.slice(0, 6)}...`;
+            const connectWalletButton = document.getElementById("connectWallet");
+            const disconnectWalletButton = document.getElementById("disconnectWallet");
+            const walletAddressElement = document.getElementById("walletAddress");
+            if (connectWalletButton) connectWalletButton.style.display = "none";
+            if (disconnectWalletButton) disconnectWalletButton.style.display = "block";
+            if (walletAddressElement) walletAddressElement.textContent = `Connected: ${account.slice(0, 6)}...`;
             alert("Wallet connected!");
         } catch (error) {
             console.error("Wallet error:", error);
@@ -2286,23 +2424,14 @@ document.addEventListener("DOMContentLoaded", () => {
     function disconnectWallet() {
         account = null;
         contract = null;
-        document.getElementById("connectWallet").style.display = "block";
-        document.getElementById("disconnectWallet").style.display = "none";
-        document.getElementById("walletAddress").textContent = "";
+        const connectWalletButton = document.getElementById("connectWallet");
+        const disconnectWalletButton = document.getElementById("disconnectWallet");
+        const walletAddressElement = document.getElementById("walletAddress");
+        if (connectWalletButton) connectWalletButton.style.display = "block";
+        if (disconnectWalletButton) disconnectWalletButton.style.display = "none";
+        if (walletAddressElement) walletAddressElement.textContent = "";
         updatePlayerHistoryUI();
         alert("Wallet disconnected!");
-    }
-
-    function getReferralLink() {
-        if (!account) return alert("Connect wallet first!");
-        const baseUrl = window.location.origin + window.location.pathname;
-        const referralLink = `${baseUrl}?ref=${account}`;
-        navigator.clipboard.writeText(referralLink).then(() => {
-            alert(`Referral link copied: ${referralLink}`);
-        }).catch(err => {
-            console.error("Failed to copy referral link:", err);
-            alert("Failed to copy referral link. Please copy manually: " + referralLink);
-        });
     }
 
     async function loadPlayerHistory() {
@@ -2347,51 +2476,138 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function updatePlayerHistoryUI() {
-        document.getElementById("gamesPlayed").textContent = playerData.gamesPlayed || 0;
-        document.getElementById("totalGameRewards").textContent = (playerData.totalRewards || 0).toFixed(2) + " BST";
-        document.getElementById("totalReferrals").textContent = playerData.totalReferrals || 0;
-        document.getElementById("referralRewards").textContent = (playerData.referralRewards || 0).toFixed(2) + " BST";
-        document.getElementById("pendingRewardsText").textContent = (playerData.pendingRewards || 0).toFixed(2) + " BST";
-        document.getElementById("flexibleStakeBalance").textContent = (playerData.flexibleStakeBalance || 0).toFixed(2) + " BST";
-        document.getElementById("lockedStakeBalance3M").textContent = (playerData.lockedStakeBalances[1] || 0).toFixed(2) + " BST";
-        document.getElementById("lockedStakeBalance6M").textContent = (playerData.lockedStakeBalances[2] || 0).toFixed(2) + " BST";
-        document.getElementById("lockedStakeBalance12M").textContent = (playerData.lockedStakeBalances[3] || 0).toFixed(2) + " BST";
-        document.getElementById("walletBalance").textContent = (playerData.walletBalance || 0).toFixed(2) + " BST";
-        document.getElementById("walletAddress").textContent = account ? `Connected: ${account.slice(0, 6)}...` : "";
-        document.getElementById("rewardHistoryList").innerHTML = (playerData.rewardHistory || []).map(entry =>
-            `<li>${entry.rewardType}: ${entry.amount.toFixed(2)} BST on ${new Date(entry.timestamp).toLocaleString()}${entry.referee !== "N/A" ? ` (Referee: ${entry.referee.slice(0, 6)}...)` : ""}</li>`
-        ).join("");
+        const gamesPlayedElement = document.getElementById("gamesPlayed");
+        const totalGameRewardsElement = document.getElementById("totalGameRewards");
+        const totalReferralsElement = document.getElementById("totalReferrals");
+        const referralRewardsElement = document.getElementById("referralRewards");
+        const pendingRewardsTextElement = document.getElementById("pendingRewardsText");
+        const flexibleStakeBalanceElement = document.getElementById("flexibleStakeBalance");
+        const lockedStakeBalance3MElement = document.getElementById("lockedStakeBalance3M");
+        const lockedStakeBalance6MElement = document.getElementById("lockedStakeBalance6M");
+        const lockedStakeBalance12MElement = document.getElementById("lockedStakeBalance12M");
+        const walletBalanceElement = document.getElementById("walletBalance");
+        const walletAddressElement = document.getElementById("walletAddress");
+        const rewardHistoryListElement = document.getElementById("rewardHistoryList");
+        const stakingHistoryListElement = document.getElementById("stakingHistoryList");
+
+        if (gamesPlayedElement) gamesPlayedElement.textContent = playerData.gamesPlayed || 0;
+        if (totalGameRewardsElement) totalGameRewardsElement.textContent = (playerData.totalRewards || 0).toFixed(2) + " BST";
+        if (totalReferralsElement) totalReferralsElement.textContent = playerData.totalReferrals || 0;
+        if (referralRewardsElement) referralRewardsElement.textContent = (playerData.referralRewards || 0).toFixed(2) + " BST";
+        if (pendingRewardsTextElement) pendingRewardsTextElement.textContent = (playerData.pendingRewards || 0).toFixed(2) + " BST";
+        if (flexibleStakeBalanceElement) flexibleStakeBalanceElement.textContent = (playerData.flexibleStakeBalance || 0).toFixed(2) + " BST";
+        if (lockedStakeBalance3MElement) lockedStakeBalance3MElement.textContent = (playerData.lockedStakeBalances[1] || 0).toFixed(2) + " BST";
+        if (lockedStakeBalance6MElement) lockedStakeBalance6MElement.textContent = (playerData.lockedStakeBalances[2] || 0).toFixed(2) + " BST";
+        if (lockedStakeBalance12MElement) lockedStakeBalance12MElement.textContent = (playerData.lockedStakeBalances[3] || 0).toFixed(2) + " BST";
+        if (walletBalanceElement) walletBalanceElement.textContent = (playerData.walletBalance || 0).toFixed(2) + " BST";
+        if (walletAddressElement) walletAddressElement.textContent = account ? `Connected: ${account.slice(0, 6)}...` : "";
+        if (rewardHistoryListElement) {
+            rewardHistoryListElement.innerHTML = (playerData.rewardHistory || []).map(entry =>
+                `<li>${entry.rewardType}: ${entry.amount.toFixed(2)} BST on ${new Date(entry.timestamp).toLocaleString()}${entry.referee !== "N/A" ? ` (Referee: ${entry.referee.slice(0, 6)}...)` : ""}</li>`
+            ).join("");
+        }
+        if (stakingHistoryListElement) {
+            stakingHistoryListElement.innerHTML = (playerData.stakeHistory || []).map(entry =>
+                `<li>${entry.type}: ${entry.amount.toFixed(2)} BST (${entry.lockPeriod === 0 ? "Flexible" : entry.lockPeriod === 1 ? "3 Months" : entry.lockPeriod === 2 ? "6 Months" : "12 Months"}) on ${new Date(entry.timestamp).toLocaleString()} ${entry.source ? `from ${entry.source}` : ""} ${entry.destination ? `to ${entry.destination}` : ""}</li>`
+            ).join("");
+        }
     }
 
     // Event Listeners
-    document.getElementById("playGame").addEventListener("click", async () => {
-        if (!account) return alert("Connect wallet first!");
-        if (!isGameRunning) {
-            showLoading(true);
-            await resetGame().catch(err => console.error("Error resetting game:", err));
-            isGameRunning = true;
-            lastMoveTime = performance.now();
-            animationFrameId = requestAnimationFrame(gameLoop);
-            showLoading(false);
-        }
-    });
+    const playGameButton = document.getElementById("playGame");
+    if (playGameButton) {
+        playGameButton.addEventListener("click", async () => {
+            if (!account) return alert("Connect wallet first!");
+            if (!isGameRunning) {
+                showLoading(true);
+                await resetGame().catch(err => console.error("Error resetting game:", err));
+                isGameRunning = true;
+                lastMoveTime = performance.now();
+                animationFrameId = requestAnimationFrame(gameLoop);
+                showLoading(false);
+            }
+        });
+    }
 
-    document.getElementById("connectWallet").addEventListener("click", connectWallet);
-    document.getElementById("disconnectWallet").addEventListener("click", disconnectWallet);
-    document.getElementById("claimGameRewards").addEventListener("click", claimPendingRewards);
-    document.getElementById("welcomeBonusButton").addEventListener("click", claimWelcomeBonus);
-    document.getElementById("claimDailyLoginBonus").addEventListener("click", claimDailyLoginBonus);
-    document.getElementById("stakeTokens").addEventListener("click", stakeTokens);
-    document.getElementById("unstakeTokens").addEventListener("click", unstakeTokens);
-    document.getElementById("joinCompetition").addEventListener("click", joinCompetition);
-    document.getElementById("purchaseBooster").addEventListener("click", purchaseBooster);
-    document.getElementById("transferToWallet").addEventListener("click", transferToWallet);
-    document.getElementById("transferFromInternal").addEventListener("click", transferFromInternalToWallet);
-    document.getElementById("getReferralLink").addEventListener("click", getReferralLink);
+    const connectWalletButton = document.getElementById("connectWallet");
+    if (connectWalletButton) {
+        connectWalletButton.addEventListener("click", connectWallet);
+    }
 
-    document.getElementById("closePopup").addEventListener("click", () => {
-        document.getElementById("gameOverPopup").style.display = "none";
-    });
+    const disconnectWalletButton = document.getElementById("disconnectWallet");
+    if (disconnectWalletButton) {
+        disconnectWalletButton.addEventListener("click", disconnectWallet);
+    }
+
+    const claimGameRewardsButton = document.getElementById("claimGameRewards");
+    if (claimGameRewardsButton) {
+        claimGameRewardsButton.addEventListener("click", claimPendingRewards);
+    }
+
+    const welcomeBonusButton = document.getElementById("welcomeBonusButton");
+    if (welcomeBonusButton) {
+        welcomeBonusButton.addEventListener("click", claimWelcomeBonus);
+    }
+
+    const claimDailyLoginBonusButton = document.getElementById("claimDailyLoginBonus");
+    if (claimDailyLoginBonusButton) {
+        claimDailyLoginBonusButton.addEventListener("click", claimDailyLoginBonus);
+    }
+
+    const stakeTokensButton = document.getElementById("stakeTokens");
+    if (stakeTokensButton) {
+        stakeTokensButton.addEventListener("click", stakeTokens);
+    }
+
+    const stakeTokensFromWalletButton = document.getElementById("stakeTokensFromWallet");
+    if (stakeTokensFromWalletButton) {
+        stakeTokensFromWalletButton.addEventListener("click", stakeTokensFromWallet);
+    }
+
+    const unstakeTokensButton = document.getElementById("unstakeTokens");
+    if (unstakeTokensButton) {
+        unstakeTokensButton.addEventListener("click", unstakeTokens);
+    }
+
+    const joinCompetitionButton = document.getElementById("joinCompetition");
+    if (joinCompetitionButton) {
+        joinCompetitionButton.addEventListener("click", joinCompetition);
+    }
+
+    const purchaseBoosterButton = document.getElementById("purchaseBooster");
+    if (purchaseBoosterButton) {
+        purchaseBoosterButton.addEventListener("click", purchaseBooster);
+    }
+
+    const transferToWalletButton = document.getElementById("transferToWallet");
+    if (transferToWalletButton) {
+        transferToWalletButton.addEventListener("click", transferToWallet);
+    }
+
+    const transferFromInternalButton = document.getElementById("transferFromInternal");
+    if (transferFromInternalButton) {
+        transferFromInternalButton.addEventListener("click", transferFromInternalToWallet);
+    }
+
+    const getReferralLinkButton = document.getElementById("getReferralLink");
+    if (getReferralLinkButton) {
+        getReferralLinkButton.addEventListener("click", getReferralLink);
+    }
+
+    const showRewardHistoryButton = document.getElementById("showRewardHistory");
+    if (showRewardHistoryButton) {
+        showRewardHistoryButton.addEventListener("click", showRewardHistory);
+    }
+
+    const closePopupButton = document.getElementById("closePopup");
+    if (closePopupButton) {
+        closePopupButton.addEventListener("click", () => {
+            const gameOverPopup = document.getElementById("gameOverPopup");
+            if (gameOverPopup) {
+                gameOverPopup.style.display = "none";
+            }
+        });
+    }
 
     document.addEventListener("keydown", (event) => {
         if (isGameRunning) {
