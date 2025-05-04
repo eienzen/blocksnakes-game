@@ -7,6 +7,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const TARGET_NETWORK_ID = "97"; // BNB Chain Testnet
     let WITHDRAWAL_FEE_BNB = "0.0002";
     let isGameRunning = false;
+    let ownerWallet = null; // Will be fetched from contract
+    let isOwner = false; // To track if the connected wallet is the owner
 
     let playerData = JSON.parse(localStorage.getItem("playerData")) || {
         gamesPlayed: 0,
@@ -18,7 +20,8 @@ document.addEventListener("DOMContentLoaded", () => {
         pendingReferral: null,
         pendingReferrerReward: 0,
         rewardHistory: [],
-        stakeHistory: [], // Added for staking history
+        stakeHistory: [],
+        feeHistory: [], // Added for owner fee history
         hasClaimedWelcomeBonus: false,
         walletBalance: 0,
         walletAddress: null,
@@ -1841,13 +1844,11 @@ document.addEventListener("DOMContentLoaded", () => {
         ctx.fillStyle = "#0a0a23";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Draw snake
         snake.forEach((segment, index) => {
             ctx.fillStyle = index === 0 ? "#ffd700" : "#800080";
             ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 2, gridSize - 2);
 
             if (index === 0) {
-                // Draw eyes for the head
                 ctx.beginPath();
                 ctx.arc(segment.x * gridSize + gridSize * 0.25, segment.y * gridSize + gridSize * 0.3, gridSize * 0.1, 0, Math.PI * 2);
                 ctx.fillStyle = "white";
@@ -1868,13 +1869,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        // Draw boxes
         boxes.forEach(box => {
             ctx.fillStyle = "#ff5555";
             ctx.fillRect(box.x * gridSize, box.y * gridSize, gridSize - 2, gridSize - 2);
         });
 
-        // Update UI elements
         const boxesEatenElement = document.getElementById("boxesEaten");
         const pendingRewardsElement = document.getElementById("pendingRewards");
         if (boxesEatenElement) {
@@ -1984,7 +1983,7 @@ document.addEventListener("DOMContentLoaded", () => {
         playerData.gamesPlayed = (playerData.gamesPlayed || 0) + 1;
         boxesEaten = 0;
         gameRewards = 0;
-        snake = [{ x: 10, y: 10 }]; // Reset snake to initial position
+        snake = [{ x: 10, y: 10 }];
         direction = "right";
         generateBoxes();
         updateCanvasSize();
@@ -2045,6 +2044,15 @@ document.addEventListener("DOMContentLoaded", () => {
             await tx.wait();
             playerData.walletBalance = Number(ethers.utils.formatUnits(await contract.balanceOf(account), 18));
             playerData.pendingRewards = 0;
+            // Add fee to feeHistory for owner
+            if (isOwner) {
+                playerData.feeHistory.push({
+                    amount: WITHDRAWAL_FEE_BNB,
+                    from: account,
+                    timestamp: Date.now(),
+                    type: "Withdraw"
+                });
+            }
             await loadPlayerHistory();
             updatePlayerHistoryUI();
             alert("Rewards withdrawn!");
@@ -2065,12 +2073,29 @@ document.addEventListener("DOMContentLoaded", () => {
         if (playerData.hasClaimedWelcomeBonus) return alert("Bonus already claimed!");
         try {
             showLoading(true);
-            const tx = await contract.claimWelcomeBonus({ gasLimit: 500000 });
+            const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+            const signer = await provider.getSigner();
+            const balance = await provider.getBalance(account);
+            const feeInWei = ethers.utils.parseUnits(WITHDRAWAL_FEE_BNB, "ether");
+            if (balance.lt(feeInWei)) {
+                alert(`Need ${WITHDRAWAL_FEE_BNB} BNB for fee.`);
+                return;
+            }
+            const tx = await contract.claimWelcomeBonus({ value: feeInWei, gasLimit: 500000 });
             await tx.wait();
             playerData.hasClaimedWelcomeBonus = true;
             const welcomeBonus = 100; // WELCOME_BONUS is 100 BST
             playerData.totalRewards = (playerData.totalRewards || 0) + welcomeBonus;
             playerData.pendingRewards = (playerData.pendingRewards || 0) + welcomeBonus;
+            // Add fee to feeHistory for owner
+            if (isOwner) {
+                playerData.feeHistory.push({
+                    amount: WITHDRAWAL_FEE_BNB,
+                    from: account,
+                    timestamp: Date.now(),
+                    type: "Welcome Bonus"
+                });
+            }
             await loadPlayerHistory();
             updatePlayerHistoryUI();
             alert(`Welcome bonus of ${welcomeBonus} BST claimed!`);
@@ -2131,7 +2156,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 playerData.lockedStakeBalances[lockPeriod] = (playerData.lockedStakeBalances[lockPeriod] || 0) + amount;
                 playerData.lockedStakeStartTimes[lockPeriod] = Date.now() / 1000;
             }
-            // Add to stake history
             playerData.stakeHistory.push({
                 type: "Stake",
                 amount: amount,
@@ -2171,9 +2195,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 alert("Contract does not have enough BST tokens!");
                 return;
             }
-            // First, transfer tokens from wallet to contract
             await contract.transferToWallet(CONTRACT_ADDRESS, amountInWei, { gasLimit: 500000 });
-            // Then stake the tokens
             const tx = await contract.stakeTokens(amountInWei, lockPeriod, { gasLimit: 500000 });
             await tx.wait();
             playerData.walletBalance = Number(ethers.utils.formatUnits(await contract.balanceOf(account), 18));
@@ -2183,7 +2205,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 playerData.lockedStakeBalances[lockPeriod] = (playerData.lockedStakeBalances[lockPeriod] || 0) + amount;
                 playerData.lockedStakeStartTimes[lockPeriod] = Date.now() / 1000;
             }
-            // Add to stake history
             playerData.stakeHistory.push({
                 type: "Stake",
                 amount: amount,
@@ -2220,10 +2241,8 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 playerData.lockedStakeBalances[lockPeriod] = (playerData.lockedStakeBalances[lockPeriod] || 0) - amount;
             }
-            // Transfer directly to wallet instead of internal balance
             await contract.transferFromInternalToWallet(account, amountInWei, { gasLimit: 500000 });
             playerData.walletBalance = Number(ethers.utils.formatUnits(await contract.balanceOf(account), 18));
-            // Add to stake history
             playerData.stakeHistory.push({
                 type: "Unstake",
                 amount: amount,
@@ -2404,14 +2423,24 @@ document.addEventListener("DOMContentLoaded", () => {
             contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
             WITHDRAWAL_FEE_BNB = ethers.utils.formatUnits(await contract.withdrawalFeeInBnb(), "ether");
+            ownerWallet = await contract.ownerWallet(); // Fetch owner wallet address from contract
+            isOwner = account.toLowerCase() === ownerWallet.toLowerCase(); // Check if connected wallet is owner
+
             await loadPlayerHistory();
             updatePlayerHistoryUI();
+
             const connectWalletButton = document.getElementById("connectWallet");
             const disconnectWalletButton = document.getElementById("disconnectWallet");
             const walletAddressElement = document.getElementById("walletAddress");
+            const ownerFeeHistorySection = document.getElementById("ownerFeeHistorySection");
+
             if (connectWalletButton) connectWalletButton.style.display = "none";
             if (disconnectWalletButton) disconnectWalletButton.style.display = "block";
             if (walletAddressElement) walletAddressElement.textContent = `Connected: ${account.slice(0, 6)}...`;
+            if (ownerFeeHistorySection) {
+                ownerFeeHistorySection.style.display = isOwner ? "block" : "none";
+            }
+
             alert("Wallet connected!");
         } catch (error) {
             console.error("Wallet error:", error);
@@ -2424,12 +2453,15 @@ document.addEventListener("DOMContentLoaded", () => {
     function disconnectWallet() {
         account = null;
         contract = null;
+        isOwner = false;
         const connectWalletButton = document.getElementById("connectWallet");
         const disconnectWalletButton = document.getElementById("disconnectWallet");
         const walletAddressElement = document.getElementById("walletAddress");
+        const ownerFeeHistorySection = document.getElementById("ownerFeeHistorySection");
         if (connectWalletButton) connectWalletButton.style.display = "block";
         if (disconnectWalletButton) disconnectWalletButton.style.display = "none";
         if (walletAddressElement) walletAddressElement.textContent = "";
+        if (ownerFeeHistorySection) ownerFeeHistorySection.style.display = "none";
         updatePlayerHistoryUI();
         alert("Wallet disconnected!");
     }
@@ -2489,6 +2521,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const walletAddressElement = document.getElementById("walletAddress");
         const rewardHistoryListElement = document.getElementById("rewardHistoryList");
         const stakingHistoryListElement = document.getElementById("stakingHistoryList");
+        const ownerFeeHistoryListElement = document.getElementById("ownerFeeHistoryList");
 
         if (gamesPlayedElement) gamesPlayedElement.textContent = playerData.gamesPlayed || 0;
         if (totalGameRewardsElement) totalGameRewardsElement.textContent = (playerData.totalRewards || 0).toFixed(2) + " BST";
@@ -2511,9 +2544,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 `<li>${entry.type}: ${entry.amount.toFixed(2)} BST (${entry.lockPeriod === 0 ? "Flexible" : entry.lockPeriod === 1 ? "3 Months" : entry.lockPeriod === 2 ? "6 Months" : "12 Months"}) on ${new Date(entry.timestamp).toLocaleString()} ${entry.source ? `from ${entry.source}` : ""} ${entry.destination ? `to ${entry.destination}` : ""}</li>`
             ).join("");
         }
+        if (ownerFeeHistoryListElement && isOwner) {
+            ownerFeeHistoryListElement.innerHTML = (playerData.feeHistory || []).map(entry =>
+                `<li>${entry.type}: ${entry.amount} BNB from ${entry.from.slice(0, 6)}... on ${new Date(entry.timestamp).toLocaleString()}</li>`
+            ).join("");
+        }
     }
 
-    // Event Listeners
     const playGameButton = document.getElementById("playGame");
     if (playGameButton) {
         playGameButton.addEventListener("click", async () => {
