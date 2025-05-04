@@ -66,7 +66,7 @@
             max-width: 90vw;
             max-height: 70vh;
         }
-        #gameInfo, #playerHistory, #stakingSection, #transferSection, #boosterSection {
+        #gameInfo, #playerHistory, #stakingSection, #transferSection, #boosterSection, #stakingHistorySection {
             margin-top: 20px;
             padding: 15px;
             background: linear-gradient(135deg, #2a2a5d, #3a3a7d);
@@ -208,6 +208,7 @@
             <button id="claimDailyLoginBonus">Claim Daily Login Bonus</button>
             <button id="joinCompetition">Join Competition</button>
             <button id="getReferralLink">Get Referral Link</button>
+            <button id="showRewardHistory">Show Reward History</button>
             <p id="withdrawalStatus"></p>
             <h3>Reward History</h3>
             <ul id="rewardHistoryList"></ul>
@@ -226,7 +227,8 @@
                 <option value="2">6 Months</option>
                 <option value="3">12 Months</option>
             </select>
-            <button id="stakeTokens">Stake Tokens</button>
+            <button id="stakeTokens">Stake from Internal</button>
+            <button id="stakeTokensFromWallet">Stake from Wallet</button>
             <h3>Unstake Tokens</h3>
             <input type="number" id="unstakeAmount" placeholder="Amount to unstake" min="0" step="0.01">
             <select id="unlockPeriod">
@@ -236,6 +238,10 @@
                 <option value="3">12 Months</option>
             </select>
             <button id="unstakeTokens">Unstake Tokens</button>
+        </div>
+        <div id="stakingHistorySection">
+            <h2>Staking History</h2>
+            <ul id="stakingHistoryList"></ul>
         </div>
         <div id="transferSection">
             <h2>Transfer Tokens</h2>
