@@ -1,4 +1,10 @@
-document.addEventListener("DOMContentLoaded", () => {
+function initializeGame() {
+    if (typeof ethers === "undefined") {
+        console.error("Ethers library not loaded. Please ensure the library is loaded correctly.");
+        alert("Failed to load Ethers library. Please refresh the page and try again.");
+        return;
+    }
+
     console.log("DOM fully loaded, initializing game...");
 
     let account = null;
@@ -7,8 +13,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const TARGET_NETWORK_ID = "97"; // BNB Chain Testnet
     let WITHDRAWAL_FEE_BNB = "0.0002";
     let isGameRunning = false;
-    let ownerWallet = null; // Will be fetched from contract
-    let isOwner = false; // To track if the connected wallet is the owner
+    let ownerWallet = null;
+    let isOwner = false;
 
     let playerData = JSON.parse(localStorage.getItem("playerData")) || {
         gamesPlayed: 0,
@@ -21,7 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
         pendingReferrerReward: 0,
         rewardHistory: [],
         stakeHistory: [],
-        feeHistory: [], // Added for owner fee history
+        feeHistory: [],
         hasClaimedWelcomeBonus: false,
         walletBalance: 0,
         walletAddress: null,
@@ -2044,7 +2050,6 @@ document.addEventListener("DOMContentLoaded", () => {
             await tx.wait();
             playerData.walletBalance = Number(ethers.utils.formatUnits(await contract.balanceOf(account), 18));
             playerData.pendingRewards = 0;
-            // Add fee to feeHistory for owner
             if (isOwner) {
                 playerData.feeHistory.push({
                     amount: WITHDRAWAL_FEE_BNB,
@@ -2084,10 +2089,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const tx = await contract.claimWelcomeBonus({ value: feeInWei, gasLimit: 500000 });
             await tx.wait();
             playerData.hasClaimedWelcomeBonus = true;
-            const welcomeBonus = 100; // WELCOME_BONUS is 100 BST
+            const welcomeBonus = 100;
             playerData.totalRewards = (playerData.totalRewards || 0) + welcomeBonus;
             playerData.pendingRewards = (playerData.pendingRewards || 0) + welcomeBonus;
-            // Add fee to feeHistory for owner
             if (isOwner) {
                 playerData.feeHistory.push({
                     amount: WITHDRAWAL_FEE_BNB,
@@ -2113,7 +2117,7 @@ document.addEventListener("DOMContentLoaded", () => {
             showLoading(true);
             const tx = await contract.claimDailyLoginBonus({ gasLimit: 500000 });
             await tx.wait();
-            const dailyBonus = 50; // DAILY_LOGIN_BONUS is 50 BST
+            const dailyBonus = 50;
             playerData.totalRewards = (playerData.totalRewards || 0) + dailyBonus;
             playerData.pendingRewards = (playerData.pendingRewards || 0) + dailyBonus;
             await loadPlayerHistory();
@@ -2423,8 +2427,8 @@ document.addEventListener("DOMContentLoaded", () => {
             contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
             WITHDRAWAL_FEE_BNB = ethers.utils.formatUnits(await contract.withdrawalFeeInBnb(), "ether");
-            ownerWallet = await contract.ownerWallet(); // Fetch owner wallet address from contract
-            isOwner = account.toLowerCase() === ownerWallet.toLowerCase(); // Check if connected wallet is owner
+            ownerWallet = await contract.ownerWallet();
+            isOwner = account.toLowerCase() === ownerWallet.toLowerCase();
 
             await loadPlayerHistory();
             updatePlayerHistoryUI();
@@ -2619,68 +2623,3 @@ document.addEventListener("DOMContentLoaded", () => {
     const transferToWalletButton = document.getElementById("transferToWallet");
     if (transferToWalletButton) {
         transferToWalletButton.addEventListener("click", transferToWallet);
-    }
-
-    const transferFromInternalButton = document.getElementById("transferFromInternal");
-    if (transferFromInternalButton) {
-        transferFromInternalButton.addEventListener("click", transferFromInternalToWallet);
-    }
-
-    const getReferralLinkButton = document.getElementById("getReferralLink");
-    if (getReferralLinkButton) {
-        getReferralLinkButton.addEventListener("click", getReferralLink);
-    }
-
-    const showRewardHistoryButton = document.getElementById("showRewardHistory");
-    if (showRewardHistoryButton) {
-        showRewardHistoryButton.addEventListener("click", showRewardHistory);
-    }
-
-    const closePopupButton = document.getElementById("closePopup");
-    if (closePopupButton) {
-        closePopupButton.addEventListener("click", () => {
-            const gameOverPopup = document.getElementById("gameOverPopup");
-            if (gameOverPopup) {
-                gameOverPopup.style.display = "none";
-            }
-        });
-    }
-
-    document.addEventListener("keydown", (event) => {
-        if (isGameRunning) {
-            if (event.key === "ArrowUp" && direction !== "down") direction = "up";
-            if (event.key === "ArrowDown" && direction !== "up") direction = "down";
-            if (event.key === "ArrowLeft" && direction !== "right") direction = "left";
-            if (event.key === "ArrowRight" && direction !== "left") direction = "right";
-        }
-    });
-
-    let touchStartX = 0, touchStartY = 0, lastTouchTime = 0;
-    if (canvas) {
-        canvas.addEventListener("touchstart", (event) => {
-            touchStartX = event.touches[0].clientX;
-            touchStartY = event.touches[0].clientY;
-        });
-        canvas.addEventListener("touchmove", (event) => {
-            if (!isGameRunning) return;
-            const touch = event.touches[0];
-            const deltaX = touch.clientX - touchStartX;
-            const deltaY = touch.clientY - touchStartY;
-            if (Date.now() - lastTouchTime < 150) return;
-            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
-                if (deltaX > 0 && direction !== "left") direction = "right";
-                else if (deltaX < 0 && direction !== "right") direction = "left";
-            } else if (Math.abs(deltaY) > 50) {
-                if (deltaY > 0 && direction !== "up") direction = "down";
-                else if (deltaY < 0 && direction !== "down") direction = "up";
-            }
-            lastTouchTime = Date.now();
-        });
-    }
-
-    window.addEventListener("resize", updateCanvasSize);
-    updateCanvasSize();
-    generateBoxes();
-    draw();
-    updatePlayerHistoryUI();
-});
